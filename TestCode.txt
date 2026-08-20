@@ -1,0 +1,165 @@
+test nodeType registration:
+
+Graph g;
+    
+    // Simulated incoming data - types are unknown until we process them
+    std::vector<std::string> incomingNodeTypes = {
+        "author",
+        "paper",
+        "venue",
+        "author"  // Same type again - should not re-register
+    };
+    
+    std::cout << "Processing incoming node types:" << std::endl;
+    for (auto& type : incomingNodeTypes) {
+        NodeTypeId typeId = g.getOrRegisterNodeType(type);
+        std::cout << "Type '" << type << "' got ID: " << typeId << std::endl;
+    }
+    
+    g.printRegistry();
+    
+    return 0;
+
+
+
+Adding nodeType and Nodes.
+
+Graph g;
+    
+    // Simulated incoming node data - unknown ahead of time
+    std::vector<std::pair<NodeId, std::string>> incomingNodes = {
+        {1, "author"},
+        {2, "paper"},
+        {3, "paper"},
+        {4, "venue"}
+    };
+    
+    std::cout << "Adding nodes from incoming data:" << std::endl;
+    for (auto& node : incomingNodes) {
+        g.addNode(node.first, node.second);
+    }
+    
+    g.printRegistry();
+    g.printNodes();
+    
+    return 0;
+
+
+Tests edgeType registration and connections between nodes. 
+
+Graph g;
+    
+    // First add nodes
+    std::vector<std::pair<NodeId, std::string>> incomingNodes = {
+        {1, "author"},
+        {2, "paper"},
+        {3, "paper"},
+        {4, "author"}
+    };
+    
+    for (auto& node : incomingNodes) {
+        g.addNode(node.first, node.second);
+    }
+    
+    // Now add edges - edge types will register dynamically
+    std::vector<std::tuple<NodeId, NodeId, std::string>> incomingEdges = {
+        {1, 2, "authored"},
+        {1, 3, "authored"},
+        {2, 3, "cites"},
+        {1, 4, "coauthor"}
+    };
+    
+    std::cout << "Adding edges from incoming data:" << std::endl;
+    for (auto& edge : incomingEdges) {
+        g.addEdge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
+    }
+    
+    g.printRegistry();
+    
+    return 0;
+
+
+Testing Storgae of node edges on correct type. 
+
+Graph g;
+    
+    std::vector<std::pair<NodeId, std::string>> incomingNodes = {
+        {1, "author"},
+        {2, "paper"},
+        {3, "paper"},
+        {4, "author"}
+    };
+    
+    for (auto& node : incomingNodes) {
+        g.addNode(node.first, node.second);
+    }
+    
+    std::vector<std::tuple<NodeId, NodeId, std::string>> incomingEdges = {
+        {1, 2, "authored"},
+        {1, 3, "authored"},
+        {2, 3, "cites"},
+        {1, 4, "coauthor"}
+    };
+    
+    for (auto& edge : incomingEdges) {
+        g.addEdge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
+    }
+    
+    // Test: Get all outgoing edges from node 1
+    std::cout << "\n=== Node 1 Outgoing Edges ===" << std::endl;
+    Node& node1 = g.getNode(1);
+    for (auto& edgeTypePair : node1.outgoing) {
+        EdgeTypeId typeId = edgeTypePair.first;
+        std::vector<EdgeRef>& refs = edgeTypePair.second;
+        
+        std::cout << "Type " << typeId << ": " << refs.size() << " edge(s)" << std::endl;
+        for (auto& ref : refs) {
+            Edge e = g.resolveEdge(typeId, ref);
+            std::cout << "  " << e.from << " -> " << e.to << std::endl;
+        }
+    }
+    
+    return 0;
+
+
+testing incoming edge storage. 
+
+Graph g;
+    
+    std::vector<std::pair<NodeId, std::string>> incomingNodes = {
+        {1, "author"},
+        {2, "paper"},
+        {3, "paper"},
+        {4, "author"}
+    };
+    
+    for (auto& node : incomingNodes) {
+        g.addNode(node.first, node.second);
+    }
+    
+    std::vector<std::tuple<NodeId, NodeId, std::string>> incomingEdges = {
+        {1, 2, "authored"},
+        {1, 3, "authored"},
+        {2, 3, "cites"},
+        {1, 4, "coauthor"}
+    };
+    
+    for (auto& edge : incomingEdges) {
+        g.addEdge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
+    }
+    
+    // Test: Get all incoming edges to node 2
+    std::cout << "\n=== Node 2 Incoming Edges ===" << std::endl;
+    Node& node2 = g.getNode(2);
+    for (auto& edgeTypePair : node2.incoming) {
+        EdgeTypeId typeId = edgeTypePair.first;
+        std::vector<EdgeRef>& refs = edgeTypePair.second;
+        
+        std::cout << "Type " << typeId << ": " << refs.size() << " edge(s)" << std::endl;
+        for (auto& ref : refs) {
+            Edge e = g.resolveEdge(typeId, ref);
+            std::cout << "  " << e.from << " -> " << e.to << std::endl;
+        }
+    }
+    
+    return 0;
